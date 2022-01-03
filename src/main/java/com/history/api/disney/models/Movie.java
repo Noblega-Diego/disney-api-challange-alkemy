@@ -35,5 +35,6 @@ public class Movie extends Base{
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name="genere_id")
+	@Getter @Setter
 	private Genere genere;
 }

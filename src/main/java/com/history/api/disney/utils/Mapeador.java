@@ -2,6 +2,7 @@ package com.history.api.disney.utils;
 
 import com.history.api.disney.dto.*;
 import com.history.api.disney.models.CharacterModel;
+import com.history.api.disney.models.Genere;
 import com.history.api.disney.models.Movie;
 import lombok.SneakyThrows;
 import org.modelmapper.Converter;
@@ -65,6 +66,11 @@ public class Mapeador extends ModelMapper {
             movie.setId(completeMovieDTO.getId());
             movie.setTitle(completeMovieDTO.getTitle());
             movie.setRating(completeMovieDTO.getRating());
+            if(completeMovieDTO.getGenereId() != null) {
+                Genere genere = new Genere();
+                genere.setId(completeMovieDTO.getGenereId());
+                movie.setGenere(genere);
+            }
             if(completeMovieDTO.getImg() != null)
                 movie.setImage(Base64.getDecoder()
                     .decode(completeMovieDTO.getImg().getBytes(StandardCharsets.UTF_8)));
@@ -146,6 +152,8 @@ public class Mapeador extends ModelMapper {
                 completeMovieDTO.setCharacters(origin.getCharacters().stream()
                         .map(characterModel -> map(characterModel, CharacterDTO.class))
                         .collect(Collectors.toList()));
+                if(origin.getGenere() != null)
+                    completeMovieDTO.setGenereId(origin.getGenere().getId());
                 if (origin.getImage() != null)
                     completeMovieDTO.setImg(Base64.getEncoder().encodeToString(origin.getImage()));
                 return completeMovieDTO;

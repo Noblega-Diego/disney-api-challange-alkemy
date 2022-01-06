@@ -19,7 +19,7 @@ public class CharacterDaoImp implements CharacterDao{
 
 	@Override
 	@Transactional
-	public CharacterModel findById(Long id) {
+	public CharacterModel findById(Long id){
 		String query = "FROM CharacterModel where id=:id";
 		return entityManager.createQuery(query, CharacterModel.class)
 				.setParameter("id", id)

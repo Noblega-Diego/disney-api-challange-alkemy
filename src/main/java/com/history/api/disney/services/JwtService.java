@@ -47,14 +47,6 @@ public class JwtService {
                 .get(key);
     }
 
-    public boolean hasTokenExpired(String token){
-        return Jwts.parser()
-                .setSigningKey(SECRET_KEY.getBytes(StandardCharsets.UTF_8))
-                .parseClaimsJws(token)
-                .getBody()
-                .getExpiration().before(new Date());
-    }
-
     public String extractUserName(String token){
         return Jwts.parser()
                 .setSigningKey(SECRET_KEY.getBytes(StandardCharsets.UTF_8))
@@ -72,10 +64,5 @@ public class JwtService {
         return Long.parseLong(user.replace(SUBJECT, ""));
     }
 
-    public boolean validateToken(String token, User user){
-        return (!hasTokenExpired(token) &&
-                extractUserName(token).equals(user.getEmail()) &&
-                extractId(token).equals(user.getId()));
-    }
 
 }

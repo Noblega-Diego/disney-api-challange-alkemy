@@ -95,11 +95,4 @@ class JwtServiceTest extends JwtService{
         assertEquals(expected, actual);
         this.extractId(token);
     }
-
-    @Test
-    @Order(10)
-    void validateToken() {
-        String token = this.createToken(user, valuesForToken);
-        assertTrue(this.validateToken(token, user));
-    }
 }

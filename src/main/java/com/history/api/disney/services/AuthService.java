@@ -18,7 +18,6 @@ import java.util.Map;
 @Service
 public class AuthService {
 
-    @Autowired
     private Environment env;
 
     @Autowired
@@ -33,9 +32,10 @@ public class AuthService {
     @Autowired
     private Mapeador mapped;
 
-    private String URL_HOSTED_SERVER;
+    private final String URL_HOSTED_SERVER;
 
-    public AuthService(){
+    public AuthService(Environment env){
+        this.env = env;
         URL_HOSTED_SERVER = env.getProperty("app.hostedserverurl");
     }
 
@@ -60,6 +60,7 @@ public class AuthService {
                         "    <meta charset=\"UTF-8\">\n" +
                         "    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\">\n" +
                         "    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n" +
+                        "    <link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css\" rel=\"stylesheet\" integrity=\"sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3\" crossorigin=\"anonymous\">\n" +
                         "    <title>Confirm Email</title>\n" +
                         "</head>\n" +
                         "<body>\n" +

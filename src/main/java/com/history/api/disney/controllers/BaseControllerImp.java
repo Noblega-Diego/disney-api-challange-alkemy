@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.persistence.NoResultException;
+
 public abstract class BaseControllerImp<E extends Base,DTO extends BaseDTO,S extends BaseService<E>>
         implements BaseController<DTO, Long>{
 
@@ -41,6 +43,8 @@ public abstract class BaseControllerImp<E extends Base,DTO extends BaseDTO,S ext
     public ResponseEntity<?> getOne(@PathVariable Long id) {
         try {
             return ResponseEntity.status(HttpStatus.OK).body(service.findById(id));
+        }catch (NoResultException e){
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"Not found\"}");
         }catch(Exception e) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"Error. Por favor intente nuevamente mas tarde\"}");
         }

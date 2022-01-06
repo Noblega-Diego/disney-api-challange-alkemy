@@ -43,11 +43,16 @@ public class MovieService implements BaseService<Movie>{
     @Override
     public MovieDTO update(Long id, Movie entity) throws Exception {
         entity.setId(id);
+        if(isValidRating(entity))
+            throw new Exception("rating not accepted");
         return maped.map(movieRepository.update(entity), MovieDTO.class);
     }
 
+
     @Override
     public MovieDTO save(Movie entity) throws Exception {
+        if(isValidRating(entity))
+            throw new Exception("rating not accepted");
         return maped.map(movieRepository.insert(entity), MovieDTO.class);
     }
 
@@ -58,13 +63,17 @@ public class MovieService implements BaseService<Movie>{
 
     public List<BasicMovieDTO> findByGenereId(Long genere) throws Exception {
         return movieRepository.findByGenere(genere).stream()
-                .map(movie -> maped.map(movie, CompleteMovieDTO.class))
+                .map(movie -> maped.map(movie, BasicMovieDTO.class))
                 .collect(Collectors.toList());
     }
 
     public List<BasicMovieDTO> findByTitle(String title, String order) throws Exception{
         return movieRepository.findByTitle(title, order).stream()
-                .map(movie -> maped.map(movie, CompleteMovieDTO.class))
+                .map(movie -> maped.map(movie, BasicMovieDTO.class))
                 .collect(Collectors.toList());
+    }
+
+    private boolean isValidRating(Movie entity) {
+        return entity.getRating() < 0 || entity.getRating() > 5;
     }
 }

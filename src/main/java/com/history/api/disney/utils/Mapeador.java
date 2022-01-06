@@ -4,14 +4,16 @@ import com.history.api.disney.dto.*;
 import com.history.api.disney.models.CharacterModel;
 import com.history.api.disney.models.Genere;
 import com.history.api.disney.models.Movie;
-import lombok.SneakyThrows;
+
 import org.modelmapper.Converter;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.spi.MappingContext;
+import org.springframework.boot.autoconfigure.web.format.DateTimeFormatters;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -25,11 +27,12 @@ public class Mapeador extends ModelMapper {
         super.addConverter(characterToBasicCharacterDTO());
         super.addConverter(characterToCompleteCharacterDTO());
         super.addConverter(movieToCompleteMovieDTO());
+        super.addConverter(movieToMovieDTO());
+        super.addConverter(characterToCharacterDTO());
     }
 
     private Converter<CompleteCharacterDTO, CharacterModel> completeCharacterDTOtoCharacter(){
         return new Converter<CompleteCharacterDTO, CharacterModel>() {
-            @SneakyThrows
             @Override
             public CharacterModel convert(MappingContext<CompleteCharacterDTO, CharacterModel> mappingContext) {
                 CompleteCharacterDTO completeCharacterDTO = mappingContext.getSource();
@@ -40,7 +43,8 @@ public class Mapeador extends ModelMapper {
                 characterModel.setAge(completeCharacterDTO.getAge());
                 characterModel.setName(completeCharacterDTO.getName());
                 characterModel.setWeight(completeCharacterDTO.getWeight());
-                characterModel.setHistory(completeCharacterDTO.getHistory());
+                characterModel.setHistory((completeCharacterDTO.getHistory() != null)?
+                        completeCharacterDTO.getHistory() : "");
                 if(completeCharacterDTO.getImg() != null)
                     characterModel.setImage(Base64.getDecoder()
                         .decode(completeCharacterDTO.getImg().getBytes(StandardCharsets.UTF_8)));
@@ -58,27 +62,44 @@ public class Mapeador extends ModelMapper {
     }
 
     private Converter<CompleteMovieDTO, Movie> completeMovieDTOtoMovie(){
-        return mappingContext -> {
-            CompleteMovieDTO completeMovieDTO = mappingContext.getSource();
-            Movie movie = mappingContext.getDestination();
-            if(movie == null)
-                movie = new Movie();
-            movie.setId(completeMovieDTO.getId());
-            movie.setTitle(completeMovieDTO.getTitle());
-            movie.setRating(completeMovieDTO.getRating());
-            if(completeMovieDTO.getGenereId() != null) {
-                Genere genere = new Genere();
-                genere.setId(completeMovieDTO.getGenereId());
-                movie.setGenere(genere);
+        return new Converter<CompleteMovieDTO, Movie>() {
+            public Movie convert(MappingContext<CompleteMovieDTO, Movie> mappingContext) {
+                try {
+                    CompleteMovieDTO completeMovieDTO = mappingContext.getSource();
+                    Movie movie = mappingContext.getDestination();
+                    if (movie == null)
+                        movie = new Movie();
+                    movie.setId(completeMovieDTO.getId());
+                    movie.setTitle(completeMovieDTO.getTitle());
+                    if(completeMovieDTO.getCreationDate() != null) {
+                        Integer[] date = Arrays.stream(completeMovieDTO.getCreationDate().split("-"))
+                                .map(Integer::valueOf).toArray(Integer[]::new);
+                        if(date.length != 3)
+                            return null;
+                        movie.setCreationDate(new Date( date[0]-1900,date[1]-1,date[2] ));
+                    }
+                    if (completeMovieDTO.getRating() < 0 || completeMovieDTO.getRating() > 5)
+                        return null;
+                    movie.setRating(completeMovieDTO.getRating());
+                    if (completeMovieDTO.getGenereId() != null) {
+                        Genere genere = new Genere();
+                        genere.setId(completeMovieDTO.getGenereId());
+                        movie.setGenere(genere);
+                    }
+                    if (completeMovieDTO.getImg() != null || !completeMovieDTO.getImg().equals(""))
+                        movie.setImage(Base64.getDecoder()
+                                .decode(completeMovieDTO.getImg().getBytes(StandardCharsets.UTF_8)));
+                    if (completeMovieDTO.getCharacters() != null)
+                        movie.setCharacters(completeMovieDTO.getCharacters().stream()
+                                .map(basicCharacterDTO -> map(basicCharacterDTO, CharacterModel.class))
+                                .collect(Collectors.toList()));
+                    else
+                        movie.setCharacters(new ArrayList<>());
+                    return movie;
+                }catch (Exception e){
+                    return null;
+                }
             }
-            if(completeMovieDTO.getImg() != null)
-                movie.setImage(Base64.getDecoder()
-                    .decode(completeMovieDTO.getImg().getBytes(StandardCharsets.UTF_8)));
-            if(completeMovieDTO.getCharacters() != null)
-            movie.setCharacters(completeMovieDTO.getCharacters().stream()
-                    .map(basicCharacterDTO -> map(basicCharacterDTO, CharacterModel.class))
-                    .collect(Collectors.toList()));
-            return movie;
         };
     }
 
@@ -92,9 +113,9 @@ public class Mapeador extends ModelMapper {
                     basicMovieDTO = new BasicMovieDTO();
                 basicMovieDTO.setTitle(origin.getTitle());
                 basicMovieDTO.setId(origin.getId());
-                basicMovieDTO.setTitle(origin.getTitle());
-                if (origin.getImage() != null)
-                basicMovieDTO.setImg(Base64.getEncoder().encodeToString(origin.getImage()));
+                basicMovieDTO.setImg((origin.getImage() != null)?
+                        Base64.getEncoder().encodeToString(origin.getImage()) :
+                        "");
                 return basicMovieDTO;
             }
         };
@@ -112,10 +133,32 @@ public class Mapeador extends ModelMapper {
                 basicCharacterDTO.setId(origin.getId());
                 if (origin.getImage() != null)
                 basicCharacterDTO.setImg(Base64.getEncoder().encodeToString(origin.getImage()));
+                else
+                    basicCharacterDTO.setImg("");
                 return basicCharacterDTO;
             }
         };
     }
+    private Converter<CharacterModel, CharacterDTO> characterToCharacterDTO(){
+        return new Converter<CharacterModel, CharacterDTO>() {
+            @Override
+            public CharacterDTO convert(MappingContext<CharacterModel, CharacterDTO> mappingContext) {
+                CharacterModel origin = mappingContext.getSource();
+                CharacterDTO characterDTO = mappingContext.getDestination();
+                if(characterDTO == null)
+                    characterDTO = new CharacterDTO();
+                characterDTO.setName(origin.getName());
+                characterDTO.setId(origin.getId());
+                characterDTO.setAge(origin.getAge());
+                characterDTO.setHistory((origin.getHistory() != null)? origin.getHistory():"");
+                characterDTO.setWeight(origin.getWeight());
+                if (origin.getImage() != null)
+                    characterDTO.setImg(Base64.getEncoder().encodeToString(origin.getImage()));
+                return characterDTO;
+            }
+        };
+    }
+
     private Converter<CharacterModel, CompleteCharacterDTO> characterToCompleteCharacterDTO(){
         return new Converter<CharacterModel, CompleteCharacterDTO>() {
             @Override
@@ -127,7 +170,7 @@ public class Mapeador extends ModelMapper {
                 completeCharacterDTO.setName(origin.getName());
                 completeCharacterDTO.setId(origin.getId());
                 completeCharacterDTO.setAge(origin.getAge());
-                completeCharacterDTO.setHistory(origin.getHistory());
+                completeCharacterDTO.setHistory((origin.getHistory() != null)? origin.getHistory():"");
                 completeCharacterDTO.setWeight(origin.getWeight());
                 completeCharacterDTO.setMovies(origin.getMovies().stream()
                         .map(movie -> map(movie, BasicMovieDTO.class))
@@ -152,8 +195,32 @@ public class Mapeador extends ModelMapper {
                 completeMovieDTO.setCharacters(origin.getCharacters().stream()
                         .map(characterModel -> map(characterModel, CharacterDTO.class))
                         .collect(Collectors.toList()));
+                if(origin.getCreationDate() != null)
+                completeMovieDTO.setCreationDate(new SimpleDateFormat("yyyy-MM-dd")
+                        .format(origin.getCreationDate()));
                 if(origin.getGenere() != null)
                     completeMovieDTO.setGenereId(origin.getGenere().getId());
+                if (origin.getImage() != null)
+                    completeMovieDTO.setImg(Base64.getEncoder().encodeToString(origin.getImage()));
+                return completeMovieDTO;
+            }
+        };
+    }
+
+    private Converter<Movie, MovieDTO> movieToMovieDTO(){
+        return new Converter<Movie, MovieDTO>() {
+            @Override
+            public MovieDTO convert(MappingContext<Movie, MovieDTO> mappingContext) {
+                Movie origin = mappingContext.getSource();
+                MovieDTO completeMovieDTO = mappingContext.getDestination();
+                if(completeMovieDTO == null)
+                    completeMovieDTO = new MovieDTO();
+                completeMovieDTO.setTitle(origin.getTitle());
+                completeMovieDTO.setId(origin.getId());
+                completeMovieDTO.setRating(origin.getRating());
+                if(origin.getCreationDate() != null)
+                    completeMovieDTO.setCreationDate(new SimpleDateFormat("yyyy-MM-dd")
+                            .format(origin.getCreationDate()));
                 if (origin.getImage() != null)
                     completeMovieDTO.setImg(Base64.getEncoder().encodeToString(origin.getImage()));
                 return completeMovieDTO;

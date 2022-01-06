@@ -41,7 +41,7 @@ public class MovieController extends BaseControllerImp<Movie, CompleteMovieDTO, 
     @GetMapping(name = "", params = {"title"})
     public ResponseEntity<?> filterByTitle(@RequestParam(name = "title") String title){
         try {
-            return filterByTitle(title,"DESC");
+            return ResponseEntity.status(HttpStatus.OK).body(service.findByTitle(title, "DESC"));
         }catch (Exception e){
             return ResponseEntity.status(HttpStatus.OK).body("{\"error\":\"Error. Por favor intente nuevamente mas tarde\"}");
         }

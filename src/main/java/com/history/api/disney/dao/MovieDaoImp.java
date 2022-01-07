@@ -4,10 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 import javax.transaction.Transactional;
 
 
+import com.history.api.disney.exceptions.BadRequestException;
+import com.history.api.disney.exceptions.NotFoundException;
 import org.springframework.stereotype.Repository;
 import com.history.api.disney.models.Movie;
 
@@ -21,9 +24,13 @@ public class MovieDaoImp implements MovieDao {
 	@Override
 	public Movie findById(Long id) {
 		String query = "FROM Movie WHERE id=:id";
-		return (Movie) entityManager.createQuery(query)
-				.setParameter("id", id)
-				.getSingleResult();
+		try {
+			return (Movie) entityManager.createQuery(query)
+					.setParameter("id", id)
+					.getSingleResult();
+		}catch (NoResultException e) {
+			throw new NotFoundException("movie with id ("+id+") not exist");
+		}
 	}
 
 	@Override
@@ -37,10 +44,7 @@ public class MovieDaoImp implements MovieDao {
 	@Transactional
 	public boolean remove(Long id) {
 		try {
-			String query = "DELETE FROM Movie as m WHERE m.id=:id";
-			entityManager.createQuery(query, Movie.class)
-					.setParameter("id", id)
-					.executeUpdate();
+			entityManager.remove(findById(id));
 			return true;
 		}catch (Exception e){
 			return false;

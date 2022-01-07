@@ -4,6 +4,7 @@ import com.history.api.disney.dao.UserDao;
 import com.history.api.disney.dto.AuthenticationRequest;
 import com.history.api.disney.dto.AuthenticationResponse;
 import com.history.api.disney.dto.UserDTO;
+import com.history.api.disney.exceptions.BadRequestException;
 import com.history.api.disney.models.User;
 import com.history.api.disney.utils.Mapeador;
 import io.jsonwebtoken.*;
@@ -39,10 +40,10 @@ public class AuthService {
         URL_HOSTED_SERVER = env.getProperty("app.hostedserverurl");
     }
 
-    public void registerUser(UserDTO user) throws Exception{
+    public void registerUser(UserDTO user){
             User createdUser = mapped.map(user, User.class);
             if(userDao.findByEmail(user.getEmail()) != null)
-                throw new Exception("email already exist");
+                throw new BadRequestException("email already exist");
             createdUser.setPassword(BCrypt.hashpw(user.getPassword(), BCrypt.gensalt(6)));
             createdUser = userDao.insert(createdUser);
             sendEmail(createdUser);
@@ -84,14 +85,14 @@ public class AuthService {
         }
     }
 
-    public AuthenticationResponse createToken(AuthenticationRequest authenticationRequest) throws Exception{
+    public AuthenticationResponse createToken(AuthenticationRequest authenticationRequest){
         User user = userDao.findByEmail(authenticationRequest.getEmail());
         if (user == null)
-            throw new Exception("User not exist");
+            throw new BadRequestException("User is not register");
         if (!user.isActive())
-            throw new Exception("User is not actived");
+            throw new BadRequestException("User is not actived");
         if (!BCrypt.checkpw(authenticationRequest.getPassword(),user.getPassword()))
-            throw new Exception("Incorrect password");
+            throw new BadRequestException("Incorrect password");
         return new AuthenticationResponse(jwtService.createToken(user));
     }
 

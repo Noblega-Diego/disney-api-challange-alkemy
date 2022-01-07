@@ -2,6 +2,7 @@ package com.history.api.disney.security;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.history.api.disney.dto.ErrorResponse;
+import com.history.api.disney.exceptions.NotFoundException;
 import com.history.api.disney.services.JwtService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.SignatureException;
@@ -18,8 +19,6 @@ import org.springframework.web.filter.GenericFilterBean;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -42,11 +41,15 @@ public class JwtFilter extends BasicAuthenticationFilter {
 
         String header = request.getHeader(HttpHeaders.AUTHORIZATION);
         String token = "";
-        if (isEmpty(header) || !header.startsWith("Bearer ")) {
+        if (isEmpty(header) && (
+                !request.getRequestURI().contains("login") ||
+                !request.getRequestURI().contains("register"))) {
             chain.doFilter(request, response);
             return;
         }
         try {
+            if(!header.startsWith("Bearer "))
+                throw new NotFoundException("Bearer missing in token");
             token = header.replace("Bearer ", "");
             String userEmail = jwtService.extractUserName(token);
             SecurityContextHolder.getContext()
@@ -58,11 +61,15 @@ public class JwtFilter extends BasicAuthenticationFilter {
         }catch (ExpiredJwtException e){
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.getWriter().write( new ObjectMapper().writeValueAsString(new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "token is expired: " + token)));
+            response.getWriter().write( new ObjectMapper().writeValueAsString(new ErrorResponse(HttpStatus.UNAUTHORIZED,  new Exception("token is expired: " + token), request.getRequestURI())));
         }catch (SignatureException e){
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.getWriter().write( new ObjectMapper().writeValueAsString(new ErrorResponse(HttpStatus.UNAUTHORIZED.value(), "token invalid")));
+            response.getWriter().write( new ObjectMapper().writeValueAsString(new ErrorResponse(HttpStatus.UNAUTHORIZED, new Exception("token is invalid"), request.getRequestURI())));
+        }catch (NotFoundException e){
+            response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+            response.getWriter().write( new ObjectMapper().writeValueAsString(new ErrorResponse(HttpStatus.NOT_FOUND, e, request.getRequestURI())));
         }
     }
 

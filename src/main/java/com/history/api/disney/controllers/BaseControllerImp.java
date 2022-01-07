@@ -9,13 +9,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.persistence.NoResultException;
 
 public abstract class BaseControllerImp<E extends Base,DTO extends BaseDTO,S extends BaseService<E>>
         implements BaseController<DTO, Long>{
 
 
     protected Class<E> E_CLASS;
+    protected Class<DTO> DTO_CLASS;
 
     @Autowired
     protected S service;
@@ -23,69 +23,43 @@ public abstract class BaseControllerImp<E extends Base,DTO extends BaseDTO,S ext
     @Autowired
     protected Mapeador mapeador;
 
-    public BaseControllerImp(Class<E> type){
-        this.E_CLASS = type;
+    public BaseControllerImp(Class<E> entityClass, Class<DTO> dtoClass){
+        this.E_CLASS = entityClass;
+        this.DTO_CLASS = dtoClass;
     }
 
 
     @Override
     @RequestMapping(value = "", method = RequestMethod.GET,params = {})
     public ResponseEntity<?> getAll() {
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(service.findAll());
-        }catch(Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"Error. Por favor intente nuevamente mas tarde\"}");
-        }
+        return ResponseEntity.status(HttpStatus.OK).body(service.findAll());
     }
 
     @Override
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
     public ResponseEntity<?> getOne(@PathVariable Long id) {
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(service.findById(id));
-        }catch (NoResultException e){
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"Not found\"}");
-        }catch(Exception e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("{\"error\":\"Error. Por favor intente nuevamente mas tarde\"}");
-        }
+        return ResponseEntity.status(HttpStatus.OK).body(mapeador.map(service.findById(id), DTO_CLASS));
     }
 
     @Override
     @RequestMapping(value = "", method = RequestMethod.POST)
     public ResponseEntity<?> save(@RequestBody DTO entity) {
-        try {
-            Object o = mapeador.map(entity, E_CLASS);
-            if (o == null)
-                throw new Exception();
-            return ResponseEntity.status(HttpStatus.OK).body(service.save(E_CLASS.cast(o)));
-        }catch(Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\":\"Error. Por favor intente nuevamente mas tarde\"}");
-        }
+        var o = mapeador.map(entity, E_CLASS);
+        return ResponseEntity.status(HttpStatus.CREATED).body(mapeador.map(service.save(o), DTO_CLASS));
     }
 
     @Override
     @RequestMapping(value = "/{id}", method = RequestMethod.DELETE)
     public ResponseEntity<?> delete(@PathVariable Long id) {
-        try {
-            if(!service.delete(id))
-                throw new Exception();
-            return ResponseEntity.status(HttpStatus.OK).body("{\"response\":\"OK\"}");
-        }catch(Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\":\"Error. Por favor intente nuevamente mas tarde\"}");
-        }
+        service.delete(id);
+        return ResponseEntity.status(HttpStatus.OK).body("{\"response\":\"OK\"}");
     }
 
     @Override
     @RequestMapping(value = "/{id}", method = RequestMethod.PUT)
     public ResponseEntity<?> update(@PathVariable Long id, @RequestBody DTO entity) {
-        try {
-            Object o = service.update(id, mapeador.map(entity, E_CLASS));
-            if (o == null)
-                throw new Exception();
-            return ResponseEntity.status(HttpStatus.OK).body(E_CLASS.cast(o));
-        }catch(Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("{\"error\":\"Error. Por favor intente nuevamente mas tarde\"}");
-        }
+        var o = service.update(id, mapeador.map(entity, E_CLASS));
+        return ResponseEntity.status(HttpStatus.OK).body(mapeador.map(o,DTO_CLASS));
     }
 
 

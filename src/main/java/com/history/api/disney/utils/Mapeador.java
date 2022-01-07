@@ -1,6 +1,7 @@
 package com.history.api.disney.utils;
 
 import com.history.api.disney.dto.*;
+import com.history.api.disney.exceptions.BadRequestException;
 import com.history.api.disney.models.CharacterModel;
 import com.history.api.disney.models.Genere;
 import com.history.api.disney.models.Movie;
@@ -64,22 +65,24 @@ public class Mapeador extends ModelMapper {
     private Converter<CompleteMovieDTO, Movie> completeMovieDTOtoMovie(){
         return new Converter<CompleteMovieDTO, Movie>() {
             public Movie convert(MappingContext<CompleteMovieDTO, Movie> mappingContext) {
-                try {
                     CompleteMovieDTO completeMovieDTO = mappingContext.getSource();
                     Movie movie = mappingContext.getDestination();
                     if (movie == null)
                         movie = new Movie();
                     movie.setId(completeMovieDTO.getId());
                     movie.setTitle(completeMovieDTO.getTitle());
-                    if(completeMovieDTO.getCreationDate() != null) {
-                        Integer[] date = Arrays.stream(completeMovieDTO.getCreationDate().split("-"))
-                                .map(Integer::valueOf).toArray(Integer[]::new);
-                        if(date.length != 3)
-                            return null;
-                        movie.setCreationDate(new Date( date[0]-1900,date[1]-1,date[2] ));
+                    try {
+                        if (completeMovieDTO.getCreationDate() != null) {
+                            Integer[] date = Arrays.stream(completeMovieDTO.getCreationDate().split("-"))
+                                    .map(Integer::valueOf).toArray(Integer[]::new);
+                            if (date.length != 3)
+                                movie.setCreationDate(null);
+                            else
+                                movie.setCreationDate(new Date(date[0] - 1900, date[1] - 1, date[2]));
+                        }
+                    }catch (NumberFormatException e) {
+                        movie.setCreationDate(null);
                     }
-                    if (completeMovieDTO.getRating() < 0 || completeMovieDTO.getRating() > 5)
-                        return null;
                     movie.setRating(completeMovieDTO.getRating());
                     if (completeMovieDTO.getGenereId() != null) {
                         Genere genere = new Genere();
@@ -96,9 +99,6 @@ public class Mapeador extends ModelMapper {
                     else
                         movie.setCharacters(new ArrayList<>());
                     return movie;
-                }catch (Exception e){
-                    return null;
-                }
             }
         };
     }
@@ -115,7 +115,7 @@ public class Mapeador extends ModelMapper {
                 basicMovieDTO.setId(origin.getId());
                 basicMovieDTO.setImg((origin.getImage() != null)?
                         Base64.getEncoder().encodeToString(origin.getImage()) :
-                        "");
+                        null);
                 return basicMovieDTO;
             }
         };
@@ -132,9 +132,7 @@ public class Mapeador extends ModelMapper {
                 basicCharacterDTO.setName(origin.getName());
                 basicCharacterDTO.setId(origin.getId());
                 if (origin.getImage() != null)
-                basicCharacterDTO.setImg(Base64.getEncoder().encodeToString(origin.getImage()));
-                else
-                    basicCharacterDTO.setImg("");
+                    basicCharacterDTO.setImg(Base64.getEncoder().encodeToString(origin.getImage()));
                 return basicCharacterDTO;
             }
         };

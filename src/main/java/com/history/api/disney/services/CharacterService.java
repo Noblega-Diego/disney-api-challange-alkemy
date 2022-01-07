@@ -23,31 +23,31 @@ public class CharacterService implements BaseService<CharacterModel> {
 	protected Mapeador maped;
 
 	@Override
-	public List<BasicCharacterDTO> findAll() throws Exception {
+	public List<BasicCharacterDTO> findAll(){
 		return characterRepository.listAll().stream()
 				.map((entity)-> maped.map(entity, BasicCharacterDTO.class))
 				.collect(Collectors.toList());
 	}
 
 	@Override
-	public CompleteCharacterDTO findById(Long id) throws Exception {
+	public CharacterModel findById(Long id){
 		CharacterModel character = characterRepository.findById(id);
-		return maped.map(character, CompleteCharacterDTO.class);
+		return character;
 	}
 
 	@Override
-	public CharacterDTO update(Long id, CharacterModel entity) throws Exception {
+	public CharacterModel update(Long id, CharacterModel entity){
 		entity.setId(id);
-		return maped.map(characterRepository.update(entity), CompleteCharacterDTO.class);
+		return characterRepository.update(entity);
 	}
 
 	@Override
-	public CharacterDTO save(CharacterModel entity) throws Exception {
-		return maped.map(characterRepository.insert(entity), CompleteCharacterDTO.class);
+	public CharacterModel save(CharacterModel entity){
+		return characterRepository.insert(entity);
 	}
 
 	@Override
-	public boolean delete(Long id) throws Exception {
+	public boolean delete(Long id){
 		return characterRepository.remove(id);
 	}
 

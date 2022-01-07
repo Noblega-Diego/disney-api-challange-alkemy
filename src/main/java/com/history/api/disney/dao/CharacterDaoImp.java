@@ -4,6 +4,7 @@ import java.util.List;
 
 import javax.persistence.*;
 
+import com.history.api.disney.exceptions.NotFoundException;
 import org.springframework.stereotype.Repository;
 
 import com.history.api.disney.models.CharacterModel;
@@ -21,9 +22,13 @@ public class CharacterDaoImp implements CharacterDao{
 	@Transactional
 	public CharacterModel findById(Long id){
 		String query = "FROM CharacterModel where id=:id";
-		return entityManager.createQuery(query, CharacterModel.class)
-				.setParameter("id", id)
-				.getSingleResult();
+		try {
+			return entityManager.createQuery(query, CharacterModel.class)
+					.setParameter("id", id)
+					.getSingleResult();
+		}catch (NoResultException e) {
+			throw new NotFoundException("character with id ("+id+") not exist");
+		}
 	}
 
 	@Override
@@ -75,7 +80,7 @@ public class CharacterDaoImp implements CharacterDao{
 	public List<CharacterModel> findByAge(Integer age) {
 		String query = "FROM CharacterModel as ch WHERE ch.age=:age";
 		return entityManager.createQuery(query, CharacterModel.class)
-				.setParameter("name", age)
+				.setParameter("age", age)
 				.getResultList();
 	}
 

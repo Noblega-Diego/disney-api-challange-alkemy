@@ -12,50 +12,33 @@ import org.springframework.web.bind.annotation.*;
 @CrossOrigin(origins = "*")
 @RequestMapping("movies")
 public class MovieController extends BaseControllerImp<Movie, CompleteMovieDTO, MovieService>{
+
     public MovieController(){
-        super(Movie.class);
+        super(Movie.class, CompleteMovieDTO.class);
     }
-
-
 
     @GetMapping(name = "", params = {"order"})
     public ResponseEntity<?> getAllapplyOrder(
             @RequestParam(name = "order") String order){
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(service.findAll(order));
-        }catch (Exception e){
-            return ResponseEntity.status(HttpStatus.OK).body("{\"error\":\"Error. Por favor intente nuevamente mas tarde\"}");
-        }
+        return ResponseEntity.status(HttpStatus.OK).body(service.findAll(order));
     }
 
     @GetMapping(name = "", params = {"genre"})
     public ResponseEntity<?> filterByGenere(
             @RequestParam(name = "genre") Long genre){
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(service.findByGenereId(genre));
-        }catch (Exception e){
-            return ResponseEntity.status(HttpStatus.OK).body("{\"error\":\"Error. Por favor intente nuevamente mas tarde\"}");
-        }
+        return ResponseEntity.status(HttpStatus.OK).body(service.findByGenereId(genre));
     }
 
     @GetMapping(name = "", params = {"title"})
     public ResponseEntity<?> filterByTitle(@RequestParam(name = "title") String title){
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(service.findByTitle(title, "DESC"));
-        }catch (Exception e){
-            return ResponseEntity.status(HttpStatus.OK).body("{\"error\":\"Error. Por favor intente nuevamente mas tarde\"}");
-        }
+        return ResponseEntity.status(HttpStatus.OK).body(service.findByTitle(title, "DESC"));
     }
 
     @GetMapping(name = "", params = {"title","order"})
     public ResponseEntity<?> filterByTitle(
             @RequestParam(name = "title") String title,
             @RequestParam(name = "order") String order){
-        try {
-            return ResponseEntity.status(HttpStatus.OK).body(service.findByTitle(title, order));
-        }catch (Exception e){
-            return ResponseEntity.status(HttpStatus.OK).body("{\"error\":\"Error. Por favor intente nuevamente mas tarde\"}");
-        }
+        return ResponseEntity.status(HttpStatus.OK).body(service.findByTitle(title, order));
     }
 
 }

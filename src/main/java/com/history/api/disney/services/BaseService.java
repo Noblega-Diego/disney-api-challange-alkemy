@@ -4,14 +4,14 @@ import java.util.List;
 
 public interface BaseService<E>{
 	
-	public List<?> findAll() throws Exception;
+	public List<?> findAll();
 	
-	public Object findById(Long id) throws Exception;
+	public E findById(Long id);
 	
-	public Object update(Long id, E entity) throws Exception;
+	public E update(Long id, E entity);
 	
-	public Object save(E entity) throws Exception;
+	public E save(E entity);
 	
-	public boolean delete(Long id) throws Exception;
+	public boolean delete(Long id);
 	
 }
